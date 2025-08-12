@@ -1,0 +1,24 @@
+[package]
+name = "dende-rs"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive", "env"] }
+notify = "6.1"
+regex = "1.10"
+walkdir = "2.5"
+anyhow = "1.0"
+chrono = "0.4"
+
+# Log
+env_logger = "0.11"
+log = "0.4"
+
+# Telegram
+teloxide = { version = "0.12", features = ["macros"] }
+tokio = { version = "1.8", features = ["macros", "fs", "rt-multi-thread", "process", "rt"] }
+
+# YAML
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"

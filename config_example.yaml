@@ -1,0 +1,22 @@
+# config.yaml
+telegram_token: "1234567890:FIXME-FIXME"  # Telegram API token for you bot
+
+jobs:
+  # Job 1
+  - path: "/tmp/logs/apache2/"            # Path of main folder where to search
+    search: "ERROR"                       # Using simple string to search
+    recursive: true                       # Recurse other folders inside the main folder
+    read_existing: false                  # Only read new files
+    to: ["console", "tg:UserId-FIXME"]    # Console + Telegram UserId
+
+  # Job 2
+  - path: "/tmp/logs/ssh/"                # Path of main folder where to search
+    regex: "^password=.*"                 # Using simple string to search
+    recursive: true                       # Recurse other folders inside the main folder
+    read_existing: true                   # Only read new files
+    to: ["console"]                       # Only console 
+  
+  # Job 3
+  - path: "/tmp/logs/nginx/access.log"    # Or path of one file
+    regex: '^SUCCESS.*'                   # Using regex
+    to: ["tg:UserId-FIXME"]               # Telegram UserId

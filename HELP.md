@@ -1,10 +1,41 @@
 <hr />
 
+- [Usage](#usage)
 - [Quick start](#quick-start)
 - [YAML example](#yaml-example)
 - [How to add a new notifier?](#how-to-add-a-new-notifier)
 
 <hr />
+
+## Usage
+
+```bash
+Monitor logs files and folders and notify from Telegram bot when a search or regex matches!
+
+Usage: dende-rs [OPTIONS]
+
+Options:
+  -P, --path <PATH>
+          Path to watch (file or folder, single-job CLI mode)
+  -S, --search <SEARCH>
+          Literal term to search for (single-job CLI mode)
+  -R, --regex <REGEX>
+          Regular expression (Rust regex, single-job CLI mode))
+  -T, --to <TO>
+          Recipients: plain text = console tag, 'tg:<CHAT_ID>' = Telegram (single-job CLI mode)
+      --recursive
+          Watch subdirectories (single-job CLI mode)
+      --read-existing
+          On startup, read existing files from the beginning (single-job CLI mode)
+      --telegram-token <TELEGRAM_TOKEN>
+          Telegram bot token (or ENV TELEGRAM_BOT_TOKEN) (single-job CLI mode) [env: TELEGRAM_BOT_TOKEN=]
+  -C, --config <CONFIG>
+          YAML configuration file (multi-jobs)
+  -v...
+          Verbosity (-v, -vv, -vvv)
+  -h, --help
+          Print help
+```
 
 ## Quick Start
 
@@ -34,18 +65,14 @@ cargo build --release
 target/debug/dende --config ./config_example.yaml
 
 # Single-job CLI from string search
-target/debug/dende -- \
+target/release/dende-rs -- \
   -P /var/log/myapp \
   -S ERROR \
-  -D console -D tg:123456789 \
+  -T console -T tg:123456789 \
   --recursive
 
 # Single-job CLI from regex search
-target/debug/dende -- \
-  -P /var/log/myapp/access.log \
-  -R "^SUCCESS.*" \
-  -D console -D tg:123456789 \
-  --recursive
+target/release/dende-rs -P /var/log/myapp/access.log -R "^SUCCESS.*" -T tg:123456789
 ```
 
 ## YAML example

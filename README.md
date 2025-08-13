@@ -45,15 +45,11 @@ target/release/dende-rs --config ./config_example.yaml
 target/release/dende-rs -- \
   -P /var/log/myapp \
   -S ERROR \
-  -D console -D tg:123456789 \
+  -T console -T tg:123456789 \
   --recursive
 
-# Single-job CLI from sregex search
-target/release/dende-rs -- \
-  -P /var/log/myapp/access.log \
-  -R "^SUCCESS.*" \
-  -D console -D tg:123456789 \
-  --recursive
+# Single-job CLI from regex search
+target/release/dende-rs -P /var/log/myapp/access.log -R "^SUCCESS.*" -T tg:123456789
 ```
 
 <hr />

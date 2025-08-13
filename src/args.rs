@@ -17,7 +17,7 @@ pub struct Args {
     #[arg(short = 'S', long = "search")]
     pub search: Option<String>,
 
-    /// Regular expression (Rust regex, single-job CLI mode))
+    /// Regular expression (Rust regex, single-job CLI mode)
     #[arg(short = 'R', long = "regex")]
     pub regex: Option<String>,
 

@@ -1,13 +1,15 @@
 <hr />
 
-- [Usage](#usage)
-- [Quick start](#quick-start)
+- [Help](#help)
+- [Quick usage](#quick-usage)
+  - [Compilation (Makefile, cargo, docker)](#compilation)
+  - [Quick start](#quick-start)
 - [YAML example](#yaml-example)
 - [How to add a new notifier?](#how-to-add-a-new-notifier)
 
 <hr />
 
-## Usage
+## Help
 
 ```bash
 Monitor logs files and folders and notify from Telegram bot when a search or regex matches!
@@ -20,7 +22,7 @@ Options:
   -S, --search <SEARCH>
           Literal term to search for (single-job CLI mode)
   -R, --regex <REGEX>
-          Regular expression (Rust regex, single-job CLI mode))
+          Regular expression (Rust regex, single-job CLI mode)
   -T, --to <TO>
           Recipients: plain text = console tag, 'tg:<CHAT_ID>' = Telegram (single-job CLI mode)
       --recursive
@@ -37,7 +39,32 @@ Options:
           Print help
 ```
 
-## Quick Start
+## Quick usage
+
+### Compilation
+
+This project can be compiled directly from make command like:
+
+```bash
+# Compile it for your current system
+make release
+# Compile it for Windows
+make windows
+```
+
+Or using docker like below:
+
+```bash
+docker build --rm -t dende-rs .
+
+# Then
+docker run --rm -v $PWD:/usr/src/dende-rs dende-rs help
+docker run --rm -v $PWD:/usr/src/dende-rs dende-rs release
+docker run --rm -v $PWD:/usr/src/dende-rs dende-rs windows
+docker run --rm -v $PWD:/usr/src/dende-rs dende-rs linux
+```
+
+### Quick start
 
 1. Download [Rust](https://www.rust-lang.org/tools/install).
 2. Create a new bot using [@Botfather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token) to get a token in the format `0123456789:XXXXxXXxxxXxX3x3x-3X-XxxxX3XXXXxx3X`.

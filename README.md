@@ -10,11 +10,11 @@
 
 Like Dende in DBZ watches over Earth, `dende-rs` watches over your log files in real time and alerts the right people as soon as something happens. A fast Rust observer that monitors your log files and sends alerts when a line matches a string or regular expression. Send notifications to the console and/or Telegram, via CLI flags or a multi-job with YAML configuration file.
 
-- [HELP.md](HELP.md) - How to compile it? How to install it? How to use it?
+- [HELP.md](HELP.md) - How to compile it? How to install it? How to use it? How to add another API notifier?
 - [CHANGELOG.md](CHANGELOG.md) - A record of all significant version changes
 - [ROADMAP.md](ROADMAP.md) - List of planned evolutions
 
-## Quick Start
+## Quick usage
 
 1. Download [Rust](https://www.rust-lang.org/tools/install).
 2. Create a new bot using [@Botfather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token) to get a token in the format `0123456789:XXXXxXXxxxXxX3x3x-3X-XxxxX3XXXXxx3X`.

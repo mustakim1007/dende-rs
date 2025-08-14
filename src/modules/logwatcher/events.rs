@@ -4,8 +4,8 @@ use std::thread;
 use std::time::Duration;
 use log::error;
 
+use crate::modules::logwatcher::files::{initialize_files, read_new_lines, TailState};
 use crate::Matcher;
-use super::files::{TailState, initialize_files, read_new_lines};
 use crate::notifiers::Notifier;
 
 /// Handle a single filesystem event and read new lines if appropriate.

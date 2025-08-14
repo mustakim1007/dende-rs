@@ -1,6 +1,6 @@
 [package]
 name = "dende-rs"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 
 [dependencies]
@@ -10,10 +10,14 @@ regex = "1.10"
 walkdir = "2.5"
 anyhow = "1.0"
 chrono = "0.4"
+serde_json = "1"
 
 # Log
 env_logger = "0.11"
 log = "0.4"
+
+# Virustotal library
+virustotal3 = { version = "3.0.2" }
 
 # Telegram
 teloxide = { version = "0.12", features = ["macros"] }

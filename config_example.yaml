@@ -1,22 +1,35 @@
 # config.yaml
+
+# Notifiers
 telegram_token: "1234567890:FIXME-FIXME"  # Telegram API token for you bot
+# fixme_token: "token"
+
+# Applications
+virustotal_token: "FIXME"
 
 jobs:
-  # Job 1
+  # Job 1 (log-watcher)
   - path: "/tmp/logs/apache2/"            # Path of main folder where to search
     search: "ERROR"                       # Using simple string to search
     recursive: true                       # Recurse other folders inside the main folder
     read_existing: false                  # Only read new files
-    to: ["console", "tg:UserId-FIXME"]    # Console + Telegram UserId
+    to: ["console:log"]                   # Only on console 
 
-  # Job 2
+  # Job 2 (log-watcher)
   - path: "/tmp/logs/ssh/"                # Path of main folder where to search
     regex: "^password=.*"                 # Using simple string to search
     recursive: true                       # Recurse other folders inside the main folder
     read_existing: true                   # Only read new files
-    to: ["console"]                       # Only console 
+    to: ["tg:FIXME"]                      # Only on Telegram
   
-  # Job 3
+  # Job 3 (log-watcher)
   - path: "/tmp/logs/nginx/access.log"    # Or path of one file
     regex: '^SUCCESS.*'                   # Using regex
-    to: ["tg:UserId-FIXME"]               # Telegram UserId
+    to: ["console:log", "tg:FIXME"]       # Console + Telegram 
+
+  # Job 4 (virustotal-watcher) (Check if your payload will be publish on virustotal and notify you)
+  - hash: [ 
+            "61c0810a23580cf492a6ba4f7654566108331e7a4134c968c2d6a05261b2d8a1", # SHA-256 of your payload
+            "11e031526c1e5e177c9fac5be0a3d0383f74ab98399a01adebd42908a3a2fe20", # SHA-256 of your payload
+          ]
+    to: ["console:log", "tg:FIXME"]       # Console + Telegram 

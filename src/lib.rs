@@ -1,5 +1,6 @@
 pub mod args;
 pub mod utils;
+pub mod modules;
 pub mod notifiers;
 
 use regex::Regex;

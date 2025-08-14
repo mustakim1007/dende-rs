@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.0.2
+
+### Date
+`2025/08/14`
+
+### Summary
+
+Added new job, for VirusTotal hash watcher, polls SHA-256 payloads and stops once found.
+
 ## v0.0.1
 
 ### Date

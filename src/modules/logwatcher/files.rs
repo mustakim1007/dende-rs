@@ -7,9 +7,9 @@ use std::{
 use walkdir::WalkDir;
 use anyhow::Result;
 
-use crate::Matcher;
+use crate::{utils::date::timestamp, Matcher};
 use crate::notifiers::Notifier;
-use log::{info,error};
+use log::{info,trace,error};
 
 /// Per-file tailing state (byte offsets and line counters).
 pub struct TailState {
@@ -102,8 +102,26 @@ pub fn read_new_lines(
         line_no += 1;
         byte_pos += (line.len() + 1) as u64; // +1 ~ "\n" (approx, works for UNIX logs)
         if matcher.matches(&line) {
+
             info!("File {:?} match for {:?}", &path, &matcher);
-            notifier.notify(path, line_no, &line);
+
+            let _txt = format!(
+                "!dende-rs::log-watcher::matched!\n\nDate: {}\nFilename and line: {}:{}\nContent matched:\n\n{}",
+                timestamp(),
+                path.display(),
+                line_no,
+                line
+            );
+            let _html = format!(
+                "<b>!dende-rs::log-watcher::matched!</b>\n\n<i>Date:</i> <b>{}</b>\n<i>Filename and line:</i> <b>{}:{}</b>\n<i>Content matched:</i>\n\n{}",
+                timestamp(),
+                path.display(),
+                line_no,
+                line
+            );
+
+            trace!("\n{_txt}\n");
+            notifier.notify(&_txt);
         }
     }
 

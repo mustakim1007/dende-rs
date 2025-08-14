@@ -1,6 +1,9 @@
 <hr />
 
 - [Help](#help)
+  - [Help usage](#help-usage)
+  - [Watchers](#watchers)
+  - [Notifiers (sinks)](#notifiers-sinks)
 - [Quick usage](#quick-usage)
   - [Compilation (Makefile, cargo, docker)](#compilation)
   - [Quick start](#quick-start)
@@ -11,8 +14,12 @@
 
 ## Help
 
+### Help Usage
+
 ```bash
-Monitor logs files and folders and notify from Telegram bot when a search or regex matches!
+dende-rs monitors files or directories for patterns (string or regex) and sends instant Telegram notifications on matches.
+It can also run a dedicated "VT watch" job that polls VirusTotal for your payload’s hash and alerts you the moment it’s published.
+Configure it via CLI or YAML to run multiple jobs in parallel.
 
 Usage: dende-rs [OPTIONS]
 
@@ -31,6 +38,10 @@ Options:
           On startup, read existing files from the beginning (single-job CLI mode)
       --telegram-token <TELEGRAM_TOKEN>
           Telegram bot token (or ENV TELEGRAM_BOT_TOKEN) (single-job CLI mode) [env: TELEGRAM_BOT_TOKEN=]
+  -H, --hash <HASH>
+          SHA-256 hash of the payload to monitor on VirusTotal. Checks whether the binary has been published. (single-job CLI mode)
+      --virustotal-token <VIRUSTOTAL_TOKEN>
+          Virustotal API token to check the payload hashes is published or not (or ENV VIRUSTOTAL_TOKEN) (single-job CLI mode) [env: VIRUSTOTAL_TOKEN=]
   -C, --config <CONFIG>
           YAML configuration file (multi-jobs)
   -v...
@@ -38,6 +49,38 @@ Options:
   -h, --help
           Print help
 ```
+
+### Watchers
+
+> All watchers sends an alert immediately to the configured sinks.
+
+- [x] Log watcher
+  - **Description:** Tail a single file or a directory (optionally recursive) and match each line via a literal string or regex.
+  - **Limitation:** N/A
+
+- [x] Payload watcher on virustotal
+  - **Description:** Periodically check whether one or more SHA-256 values of your payloads have been published on VirusTotal.
+  - **Limitation:** Free API limitation 1 request for 1 hash every ~216s
+
+### Notifiers (sinks)
+
+> The notification layer is modular. Built-ins: console and Telegram. It’s easy to add more sinks (e.g., Slack, email, webhooks, SMS) without touching the watchers.
+
+- [x] Console
+  - **Description:** Prints alerts to STDOUT with a tag, no external dependencies. Great for local dev, systemd journaling, or piping into other tools.
+  - **Command line/YAML parameter:** `"console"`
+
+- [x] Telegram
+  - **Description:** Sends alerts via a Telegram bot to a user.
+  - **Command line/YAML parameter:** `"tg:ID"` (e.g., `"tg:123456789"`)
+
+- [ ] Email
+  - **Description:** TODO (planned: SMTP/API-based email alerts with subject templating and batching).
+  - **Command line/YAML parameter:** `"email:ID"` (e.g., `"email:ops@example.com"`)
+
+- [ ] SMS
+  - **Description:** TODO (planned: provider-backed SMS alerts with basic rate-limiting).
+  - **Command line/YAML parameter:** `"sms:ID"` (e.g., "`sms:+33612345678`")
 
 ## Quick usage
 
@@ -64,7 +107,7 @@ docker run --rm -v $PWD:/usr/src/dende-rs dende-rs windows
 docker run --rm -v $PWD:/usr/src/dende-rs dende-rs linux
 ```
 
-### Quick start
+### Quick start wth Telegram
 
 1. Download [Rust](https://www.rust-lang.org/tools/install).
 2. Create a new bot using [@Botfather](https://core.telegram.org/bots/tutorial#obtain-your-bot-token) to get a token in the format `0123456789:XXXXxXXxxxXxX3x3x-3X-XxxxX3XXXXxx3X`.
@@ -89,7 +132,7 @@ cargo build --release
 
 ```bash
 # YAML multi-job mode
-target/debug/dende --config ./config_example.yaml
+target/debug/dende-rs --config ./config_example.yaml
 
 # Single-job CLI from string search
 target/release/dende-rs -- \
@@ -106,27 +149,40 @@ target/release/dende-rs -P /var/log/myapp/access.log -R "^SUCCESS.*" -T tg:12345
 
 ```yaml
 # config.yaml
+
+# Notifiers
 telegram_token: "1234567890:FIXME-FIXME"  # Telegram API token for you bot
+# fixme_token: "token"
+
+# Applications
+virustotal_token: "FIXME"
 
 jobs:
-  # Job 1
+  # Job 1 (log-watcher)
   - path: "/tmp/logs/apache2/"            # Path of main folder where to search
     search: "ERROR"                       # Using simple string to search
     recursive: true                       # Recurse other folders inside the main folder
     read_existing: false                  # Only read new files
-    to: ["console", "tg:UserId-FIXME"]    # Console + Telegram UserId
+    to: ["console:log"]                   # Only on console 
 
-  # Job 2
+  # Job 2 (log-watcher)
   - path: "/tmp/logs/ssh/"                # Path of main folder where to search
     regex: "^password=.*"                 # Using simple string to search
     recursive: true                       # Recurse other folders inside the main folder
     read_existing: true                   # Only read new files
-    to: ["console"]                       # Only console 
+    to: ["tg:FIXME"]                      # Only on Telegram
   
-  # Job 3
+  # Job 3 (log-watcher)
   - path: "/tmp/logs/nginx/access.log"    # Or path of one file
     regex: '^SUCCESS.*'                   # Using regex
-    to: ["tg:UserId-FIXME"]               # Telegram UserId
+    to: ["console:log", "tg:FIXME"]       # Console + Telegram 
+
+  # Job 4 (virustotal-watcher) (Check if your payload will be publish on virustotal and notify you)
+  - hash: [ 
+            "61c0810a23580cf492a6ba4f7654566108331e7a4134c968c2d6a05261b2d8a1", # SHA-256 of your payload
+            "11e031526c1e5e177c9fac5be0a3d0383f74ab98399a01adebd42908a3a2fe20", # SHA-256 of your payload
+          ]
+    to: ["console:log", "tg:FIXME"]       # Console + Telegram 
 ```
 
 ## How to add a new notifier?
@@ -155,7 +211,7 @@ impl NewNotifierSink {
         // FIXME create 
     }
 
-    pub async fn send(&self, html: &str) -> Result<()> {
+    pub async fn send(&self, msg: &str) -> Result<()> {
         info!("Sending notification from FIXME..");
         // FIXME send message
         debug!("Sent by FIXME to FIXME");
@@ -167,3 +223,4 @@ impl NewNotifierSink {
 2. Add `pub mod newnotifier;` inside the rs file: `src/notifiers/mod.rs`
 3. Add `NewNotifier(NewNotifierSink),` in the `enum Sink{}` inside the rs file: `src/notifiers/mod.rs`
 4. Add `Sink::NewNotifier(s) => s.send(_text).await,` in the `send()` function inside the rs file: `src/notifiers/mod.rs`
+5. Add match for your notifier inside in the `new()` function inside the rs file: `src/notifiers/mod.rs`

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::path::{Path, PathBuf};
 use tokio::task::JoinHandle;
+use std::time::Duration;
 
 pub mod telegram;
 pub mod console;
@@ -8,9 +8,7 @@ pub mod console;
 
 use console::ConsoleSink;
 use telegram::TelegramSink;
-use log::error;
-
-use crate::utils::date::timestamp;
+use log::{trace,error};
 
 /// Aggregates all selected sinks and dispatches notifications to them.
 pub struct Notifier {
@@ -21,9 +19,7 @@ pub struct Notifier {
 
 #[derive(Clone, Debug)]
 pub struct NotifyEvent {
-    pub file: PathBuf,
-    pub line_no: u64,
-    pub line: String,
+    pub msg: String,
 }
 
 /// Concrete sink types we support. Add new variants as you add files.
@@ -34,72 +30,101 @@ enum Sink {
 }
 
 impl Sink {
-    async fn send(&self, _text: &str, _text_no_content: &str, _html: &str) -> Result<()> {
+    async fn send(&self, _msg: &str) -> Result<()> {
         match self {
-            Sink::Console(s) => s.send(_text_no_content).await,
-            Sink::Telegram(s) => s.send(_html).await,
+            Sink::Console(s) => s.send(_msg).await,
+            Sink::Telegram(s) => s.send(_msg).await,
             // // Easy to add another notifier here
-            // Sink::Telegram(s) => s.send(_text).await,
+            // Sink::NewNotifier(s) => s.send(_text).await,
         }
     }
 }
 
 impl Notifier {
-    /// Build sinks from `dest` strings. Telegram entries look like `tg:<CHAT_ID>`.
-    pub fn new(dests_raw: Vec<String>, telegram_token: Option<String>) -> Result<Self> {
+    pub fn new(
+        to_raw: Vec<String>,
+        telegram_token: Option<String>
+    ) -> Result<Self> {
+
         let mut sinks: Vec<Sink> = Vec::new();
 
-        for d in dests_raw {
-            if let Some(rest) = d.strip_prefix("tg:") {
-                match rest.parse::<i64>() {
-                    Ok(id) => {
-                        if let Some(token) = telegram_token.clone() {
-                            sinks.push(Sink::Telegram(TelegramSink::new(token, id)));
-                        } else {
-                            error!("Skipping Telegram dest {rest}: no token provided");
-                            sinks.push(Sink::Console(ConsoleSink::new(format!(
-                                "INVALID_TG_NO_TOKEN({rest})"
-                            ))));
+        for to in to_raw {
+            let to = to.trim();
+
+            match to.split_once(':') {
+                
+                // Telegram notifier
+                Some(("tg", id)) => {
+                    match id.parse::<i64>() {
+                        Ok(id) => {
+                            if let Some(token) = telegram_token.clone() {
+                                sinks.push(Sink::Telegram(TelegramSink::new(token, id)));
+                            } else {
+                                error!("Skipping Telegram dest {id}: no token provided");
+                                continue;
+                            }
                         }
+                        Err(e) => {
+                            error!("Invalid Telegram UserId({id}): {e}");
+                            continue;
+                        },
                     }
-                    Err(_) => sinks.push(Sink::Console(ConsoleSink::new(format!(
-                        "INVALID_TG_ID({rest})"
-                    )))),
                 }
-            } else {
-                sinks.push(Sink::Console(ConsoleSink::new(d)));
+
+                // Email notifier
+                Some(("email", _addr)) => {
+                    error!("Email notification has not been yet implemented.");
+                    continue;
+                },
+
+                // SMS notifier
+                Some(("sms", _num)) => {
+                    error!("SMS notification has not been yet implemented.");
+                    continue;
+                }
+
+                // Console notifier
+                Some(("console", tag)) => {
+                    sinks.push(Sink::Console(ConsoleSink::new(tag.to_string())));
+                    continue;
+                }
+
+                // Unknown notifier
+                Some((_scheme, _rest)) => {
+                    error!("{_scheme} unknown!");
+                    continue;
+                }
+
+                None => {
+                    continue;
+                }
             }
+
         }
 
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<NotifyEvent>();
 
         let task = tokio::spawn(async move {
             while let Some(ev) = rx.recv().await {
-                let text = format!(
-                    "[logwatch] {}: line {} matched:
-{}",
-                    ev.file.display(),
-                    ev.line_no,
-                    ev.line.trim_end()
-                );
-                
-                let text_no_content = format!(
-                    "[logwatch] {}: line {} matched",
-                    ev.file.display(),
-                    ev.line_no,
-                );
-
-                let html = format!(
-                    "<b>MATCHED</b>\n\n<i>Date:</i> <b>{}</b>\n<i>Filename and line:</i> <b>{}:{}</b>\n<i>Content matched:</i>\n\n{}",
-                    timestamp(),
-                    ev.file.display(),
-                    ev.line_no,
-                    ev.line.trim_end()
-                );
-
                 for sink in &sinks {
-                    if let Err(e) = sink.send(&text, &text_no_content, &html).await {
-                        error!("notifier sink error: {e}");
+                    let mut delay = Duration::from_millis(400);
+                    for attempt in 1..=3 {
+                        let res = sink.send(&ev.msg).await;
+                        match res {
+                            Ok(_) => {
+                                trace!("notifier sink well work, notification sent!");
+                                break;
+                            }
+                            Err(e) => {
+                                if attempt == 3 {
+                                    error!("send failed after {attempt} attempts: {e}");
+                                    break;
+                                }
+                                error!("notifier sink error, send failed (attempt {attempt}/3): {e} - retry in {} ms",delay.as_millis());
+                                tokio::time::sleep(delay).await;
+                                delay = std::cmp::min(delay * 2, Duration::from_secs(5));
+                            }
+                        }
                     }
                 }
             }
@@ -109,11 +134,9 @@ impl Notifier {
     }
 
     /// Queue a notification event for processing by the async task.
-    pub fn notify(&self, file: &Path, line_no: u64, line: &str) {
+    pub fn notify(&self, msg: &str) {
         let _ = self.tx.send(NotifyEvent {
-            file: file.to_path_buf(),
-            line_no,
-            line: line.to_string(),
+            msg: msg.to_string(),
         });
     }
 }

@@ -3,15 +3,15 @@ use log::info;
 
 #[derive(Clone, Debug)]
 pub struct ConsoleSink {
-    tag: String,
+    _tag: String,
 }
 
 impl ConsoleSink {
-    pub fn new(tag: String) -> Self { Self { tag } }
+    pub fn new(_tag: String) -> Self { Self { _tag } }
 
     pub async fn send(&self, text: &str) -> Result<()> {
         info!("Sending notification from console..");
-        info!("[NOTIFY -> {}] {}", self.tag, text);
+        println!("\n{text}\n");
         Ok(())
     }
 }

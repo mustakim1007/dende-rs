@@ -310,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "dende-rs"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "chrono",
@@ -320,9 +320,11 @@ dependencies = [
  "notify",
  "regex",
  "serde",
+ "serde_json",
  "serde_yaml",
  "teloxide",
  "tokio",
+ "virustotal3",
  "walkdir",
 ]
 
@@ -1944,6 +1946,19 @@ name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "virustotal3"
+version = "3.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3b274cfc23e1399596f026a87c6ff165b14b1e4a1eb9abb73ba727b3798d4d3"
+dependencies = [
+ "anyhow",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
 
 [[package]]
 name = "walkdir"
